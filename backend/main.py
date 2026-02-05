@@ -159,9 +159,11 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, user_id: str):
     await handle_websocket(websocket, room_id, user_id)
 
 
-# Serve static files in production
+# Serve static files in production (only if frontend is built and included)
 static_dir = os.path.join(os.path.dirname(__file__), "static")
-if os.path.exists(static_dir):
+index_file = os.path.join(static_dir, "index.html")
+
+if os.path.exists(static_dir) and os.path.exists(index_file):
     from fastapi.staticfiles import StaticFiles
 
     assets_dir = os.path.join(static_dir, "assets")
