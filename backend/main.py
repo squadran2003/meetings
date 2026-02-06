@@ -142,10 +142,17 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, user_id: str):
     """WebSocket endpoint for signaling."""
     # Validate origin
     origin = websocket.headers.get("origin", "")
-    if origin and origin not in ALLOWED_ORIGINS:
-        logger.warning(f"Rejected WebSocket from invalid origin: {origin}")
-        await websocket.close(code=1008, reason="Invalid origin")
-        return
+    if origin:
+        # Auto-allow same-origin connections (frontend served by this backend)
+        from urllib.parse import urlparse
+        origin_host = urlparse(origin).netloc
+        request_host = websocket.headers.get("host", "")
+        is_same_origin = origin_host == request_host
+
+        if not is_same_origin and origin not in ALLOWED_ORIGINS:
+            logger.warning(f"Rejected WebSocket from invalid origin: {origin}")
+            await websocket.close(code=1008, reason="Invalid origin")
+            return
 
     # Validate room_id and user_id
     if not room_id or len(room_id) > 50:
