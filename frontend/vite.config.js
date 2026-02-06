@@ -1,22 +1,26 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-export default defineConfig({
-  plugins: [vue()],
-  define: {
-    global: 'globalThis',
-    'process.env': {}
-  },
-  server: {
-    port: 3000,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true
-      },
-      '/ws': {
-        target: 'ws://localhost:8000',
-        ws: true
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const backendUrl = env.VITE_BACKEND_DEV_URL || 'http://localhost:8000'
+
+  return {
+    plugins: [vue()],
+    define: {
+      global: 'globalThis',
+    },
+    server: {
+      port: 3000,
+      proxy: {
+        '/api': {
+          target: backendUrl,
+          changeOrigin: true
+        },
+        '/ws': {
+          target: backendUrl.replace(/^http/, 'ws'),
+          ws: true
+        }
       }
     }
   }

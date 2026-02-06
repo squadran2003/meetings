@@ -1,19 +1,7 @@
 import { ref } from 'vue'
 import SimplePeer from 'simple-peer'
 import { useMeetingStore } from '../stores/meeting'
-
-// ICE servers configuration
-const ICE_SERVERS = [
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun2.l.google.com:19302' },
-  // Add TURN server for production - get free credentials from metered.ca
-  // {
-  //   urls: 'turn:your-turn-server.metered.ca:443',
-  //   username: 'your-username',
-  //   credential: 'your-credential'
-  // }
-]
+import { ICE_SERVERS } from '../config'
 
 export function useWebRTC(signaling) {
   const store = useMeetingStore()

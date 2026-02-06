@@ -57,6 +57,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMeetingStore } from '../stores/meeting'
+import { API_URL } from '../config'
 
 const router = useRouter()
 const store = useMeetingStore()
@@ -92,7 +93,7 @@ async function createMeeting() {
   const cleanUsername = sanitizeUsername(username.value)
 
   try {
-    const response = await fetch('/api/rooms', { method: 'POST' })
+    const response = await fetch(`${API_URL}/api/rooms`, { method: 'POST' })
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -122,7 +123,7 @@ async function joinMeeting() {
   const cleanUsername = sanitizeUsername(username.value)
 
   try {
-    const response = await fetch(`/api/rooms/${encodeURIComponent(code)}`)
+    const response = await fetch(`${API_URL}/api/rooms/${encodeURIComponent(code)}`)
 
     if (!response.ok) {
       if (response.status === 429) {

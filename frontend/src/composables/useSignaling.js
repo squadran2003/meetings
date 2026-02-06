@@ -1,5 +1,6 @@
 import { ref, onUnmounted } from 'vue'
 import { useMeetingStore } from '../stores/meeting'
+import { WS_URL } from '../config'
 
 export function useSignaling() {
   const store = useMeetingStore()
@@ -9,9 +10,12 @@ export function useSignaling() {
 
   function connect(roomId, userId) {
     return new Promise((resolve, reject) => {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const host = window.location.host
-      const wsUrl = `${protocol}//${host}/ws/${roomId}/${userId}`
+      let wsBase = WS_URL
+      if (!wsBase) {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+        wsBase = `${protocol}//${window.location.host}`
+      }
+      const wsUrl = `${wsBase}/ws/${roomId}/${userId}`
 
       store.setConnectionStatus('connecting')
       socket.value = new WebSocket(wsUrl)
