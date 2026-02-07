@@ -64,7 +64,10 @@ export function useWebRTC(signaling) {
     let peer = peers.value.get(fromUserId)
 
     if (!peer) {
-      peer = createPeer(fromUserId, username, false)
+      // Participant may already be in the store from user-joined handler.
+      // createPeer will upsert the store entry with the actual peer object.
+      const existing = store.participants.get(fromUserId)
+      peer = createPeer(fromUserId, existing?.username || username, false)
     }
 
     peer.signal(offer)
@@ -136,8 +139,14 @@ export function useWebRTC(signaling) {
 
     signaling.on('user-joined', (message) => {
       console.log('User joined:', message)
-      // Don't create peer here - wait for their offer
-      // The new user will initiate connections to existing participants
+      // Register the participant in the store so they appear in the video grid
+      // immediately. Don't create the peer yet - the new user will send us an
+      // offer because they are the initiator (see room-info handler above).
+      store.addParticipant(message.userId, {
+        username: message.username,
+        peer: null,
+        stream: null
+      })
     })
 
     signaling.on('user-left', (message) => {
@@ -146,8 +155,8 @@ export function useWebRTC(signaling) {
     })
 
     signaling.on('offer', (message) => {
-      const participant = store.participants.get(message.fromUserId)
-      const username = participant?.username || 'Unknown'
+      const existing = store.participants.get(message.fromUserId)
+      const username = existing?.username || 'Unknown'
       handleOffer(message.fromUserId, message.offer, username)
     })
 
