@@ -1,11 +1,18 @@
 import { ref } from 'vue'
 import SimplePeer from 'simple-peer'
 import { useMeetingStore } from '../stores/meeting'
-import { ICE_SERVERS } from '../config'
+import { ICE_SERVERS, getIceServers } from '../config'
 
 export function useWebRTC(signaling) {
   const store = useMeetingStore()
   const peers = ref(new Map())
+  // Resolved at init time via fetchIceServers()
+  let resolvedIceServers = ICE_SERVERS
+
+  async function fetchIceServers() {
+    resolvedIceServers = await getIceServers()
+    console.log('ICE servers resolved:', resolvedIceServers.length, 'servers')
+  }
 
   function createPeer(userId, username, initiator = false) {
     if (peers.value.has(userId)) {
@@ -20,7 +27,7 @@ export function useWebRTC(signaling) {
       stream: store.localStream,
       trickle: true,
       config: {
-        iceServers: ICE_SERVERS
+        iceServers: resolvedIceServers
       }
     })
 
@@ -186,6 +193,7 @@ export function useWebRTC(signaling) {
 
   return {
     peers,
+    fetchIceServers,
     createPeer,
     handleOffer,
     handleAnswer,

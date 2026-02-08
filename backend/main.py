@@ -106,6 +106,55 @@ async def health_check():
     return {"status": "healthy"}
 
 
+# TURN credential cache (fetched from Metered.ca API)
+_turn_cache: dict = {"iceServers": None, "expires": 0}
+METERED_API_KEY = os.getenv("METERED_API_KEY", "")
+
+
+@app.get("/api/turn-credentials")
+@limiter.limit("10/minute")
+async def get_turn_credentials(request: Request):  # noqa: ARG001
+    """Return ICE servers including TURN credentials.
+
+    Fetches from Metered.ca API and caches for 12 hours.
+    If no API key is configured, returns STUN-only servers.
+    """
+    _ = request
+    import time
+
+    stun_only = {
+        "iceServers": [
+            {"urls": "stun:stun.l.google.com:19302"},
+            {"urls": "stun:stun1.l.google.com:19302"},
+        ]
+    }
+
+    if not METERED_API_KEY:
+        return stun_only
+
+    now = time.time()
+    if _turn_cache["iceServers"] and now < _turn_cache["expires"]:
+        return {"iceServers": _turn_cache["iceServers"]}
+
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=5) as client:
+            resp = await client.get(
+                f"https://meetings.metered.live/api/v1/turn/credentials"
+                f"?apiKey={METERED_API_KEY}"
+            )
+            resp.raise_for_status()
+            servers = resp.json()
+            _turn_cache["iceServers"] = servers
+            _turn_cache["expires"] = now + 43200  # 12 hours
+            return {"iceServers": servers}
+    except Exception as e:
+        logger.warning(f"Failed to fetch TURN credentials: {e}")
+        if _turn_cache["iceServers"]:
+            return {"iceServers": _turn_cache["iceServers"]}
+        return stun_only
+
+
 @app.post("/api/rooms")
 @limiter.limit("10/minute")
 async def create_room(request: Request):  # noqa: ARG001

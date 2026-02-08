@@ -1,12 +1,13 @@
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import vuetify from 'vite-plugin-vuetify'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const backendUrl = env.VITE_BACKEND_DEV_URL || 'http://localhost:8000'
 
   return {
-    plugins: [vue()],
+    plugins: [vue(), vuetify({ autoImport: true })],
     define: {
       global: 'globalThis',
     },

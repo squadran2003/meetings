@@ -4,6 +4,34 @@
 
 set -e
 
+APP_DIR="/opt/meetings"
+
+# If --deploy flag is passed, skip setup and just build + start
+if [ "$1" = "--deploy" ]; then
+  echo "=== Deploying Video Conferencing App ==="
+
+  # Build frontend
+  echo "Installing frontend dependencies..."
+  cd "$APP_DIR/frontend"
+  npm install
+
+  echo "Building frontend..."
+  npm run build
+
+  # Remove stale static files and copy fresh build
+  echo "Updating backend static files..."
+  rm -rf "$APP_DIR/backend/static"
+  cp -r "$APP_DIR/frontend/dist" "$APP_DIR/backend/static"
+
+  # Start backend
+  echo "Starting backend..."
+  cd "$APP_DIR"
+  docker compose -f docker-compose.prod.yml up -d
+
+  echo "=== Deploy Complete ==="
+  exit 0
+fi
+
 echo "=== Video Conferencing App - Lightsail Setup ==="
 
 # Update system
@@ -42,11 +70,9 @@ echo "=== Setup Complete ==="
 echo ""
 echo "Next steps:"
 echo "1. Clone your repo to /opt/meetings"
-echo "2. Build the frontend: cd /opt/meetings/frontend && npm install && npm run build"
-echo "3. Copy frontend build to backend: cp -r /opt/meetings/frontend/dist /opt/meetings/backend/static"
-echo "4. Start the backend: cd /opt/meetings && docker compose -f docker-compose.prod.yml up -d"
-echo "5. Configure nginx (see below)"
-echo "6. Get SSL certificate: sudo certbot --nginx -d yourdomain.com"
+echo "2. Run this script again with --deploy to build and start the app"
+echo "3. Configure nginx (see below)"
+echo "4. Get SSL certificate: sudo certbot --nginx -d yourdomain.com"
 echo ""
 echo "=== Nginx Configuration ==="
 echo "Create /etc/nginx/sites-available/meetings with:"

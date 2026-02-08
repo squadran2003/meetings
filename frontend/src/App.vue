@@ -1,12 +1,7 @@
-<template>
-  <router-view />
+<template lang="pug">
+v-app
+  router-view
 </template>
 
 <script setup>
 </script>
-
-<style>
-#app {
-  min-height: 100vh;
-}
-</style>

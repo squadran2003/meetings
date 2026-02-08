@@ -14,39 +14,32 @@ export const WS_URL = import.meta.env.VITE_WS_URL || ''
 // ICE server configuration
 // STUN servers discover public IP; TURN servers relay traffic when direct
 // peer-to-peer connections fail (e.g. both users behind symmetric NAT).
-const ICE_SERVERS = [
+//
+// TURN credentials are fetched at runtime from the backend (which reads them
+// from the METERED_API_KEY env var). If no API key is configured, only STUN
+// is available and calls between different networks will fail.
+const DEFAULT_ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
-  // Free TURN relay from Open Relay (metered.ca) — good for development/testing.
-  // For production, replace with your own TURN server credentials.
-  {
-    urls: 'turn:openrelay.metered.ca:80',
-    username: 'openrelayproject',
-    credential: 'openrelayproject',
-  },
-  {
-    urls: 'turn:openrelay.metered.ca:443',
-    username: 'openrelayproject',
-    credential: 'openrelayproject',
-  },
-  {
-    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-    username: 'openrelayproject',
-    credential: 'openrelayproject',
-  },
 ]
 
-// Override with custom TURN server from environment variables if provided
-const turnUrl = import.meta.env.VITE_TURN_URL
-const turnUsername = import.meta.env.VITE_TURN_USERNAME
-const turnCredential = import.meta.env.VITE_TURN_CREDENTIAL
-
-if (turnUrl && turnUsername && turnCredential) {
-  ICE_SERVERS.push({
-    urls: turnUrl,
-    username: turnUsername,
-    credential: turnCredential,
-  })
+/**
+ * Fetches TURN server credentials from the backend at runtime.
+ * Falls back to STUN-only if the backend has no TURN config.
+ */
+export async function getIceServers() {
+  try {
+    const res = await fetch(`${API_URL}/api/turn-credentials`)
+    if (res.ok) {
+      const data = await res.json()
+      if (data.iceServers && data.iceServers.length > 0) {
+        return data.iceServers
+      }
+    }
+  } catch (e) {
+    console.warn('Could not fetch TURN credentials, using STUN only:', e)
+  }
+  return DEFAULT_ICE_SERVERS
 }
 
-export { ICE_SERVERS }
+export { DEFAULT_ICE_SERVERS as ICE_SERVERS }

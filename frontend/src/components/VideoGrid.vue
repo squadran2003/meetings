@@ -1,20 +1,18 @@
-<template>
-  <div class="video-grid" :class="gridClass">
-    <!-- Local video -->
-    <ParticipantVideo
-      :stream="store.localStream"
-      :name="store.username"
-      :is-local="true"
-    />
-
-    <!-- Remote participants -->
-    <ParticipantVideo
-      v-for="participant in store.participantList"
-      :key="participant.username"
-      :stream="participant.stream"
-      :name="participant.username"
-    />
-  </div>
+<template lang="pug">
+.video-grid(:class="gridClass")
+  //- Local video
+  ParticipantVideo(
+    :stream="store.localStream"
+    :name="store.username"
+    :is-local="true"
+  )
+  //- Remote participants
+  ParticipantVideo(
+    v-for="participant in store.participantList"
+    :key="participant.username"
+    :stream="participant.stream"
+    :name="participant.username"
+  )
 </template>
 
 <script setup>

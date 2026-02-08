@@ -1,13 +1,15 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, shallowRef, computed } from 'vue'
 
 export const useMeetingStore = defineStore('meeting', () => {
   // State
   const roomId = ref(null)
   const userId = ref(null)
   const username = ref('')
-  const participants = ref(new Map()) // userId -> { username, stream, peer }
-  const localStream = ref(null)
+  // shallowRef prevents Vue from deep-proxying MediaStream/SimplePeer objects
+  // which breaks browser APIs that expect native objects (e.g. video.srcObject)
+  const participants = shallowRef(new Map()) // userId -> { username, stream, peer }
+  const localStream = shallowRef(null)
   const isAudioEnabled = ref(true)
   const isVideoEnabled = ref(true)
   const isScreenSharing = ref(false)

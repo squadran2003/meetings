@@ -1,34 +1,27 @@
-<template>
-  <div class="meeting">
-    <!-- Loading state -->
-    <div v-if="isLoading" class="loading">
-      <div class="spinner"></div>
-      <p>Connecting to meeting...</p>
-    </div>
+<template lang="pug">
+.meeting
+  //- Loading state
+  .loading.d-flex.flex-column.align-center.justify-center(v-if="isLoading" style="flex: 1")
+    v-progress-circular(indeterminate color="primary" size="48" width="3")
+    p.mt-4 Connecting to meeting...
 
-    <!-- Error state -->
-    <div v-else-if="error" class="error-container">
-      <h2>Unable to Join Meeting</h2>
-      <p>{{ error }}</p>
-      <button @click="goHome" class="btn">Return Home</button>
-    </div>
+  //- Error state
+  .d-flex.flex-column.align-center.justify-center.pa-5.text-center(v-else-if="error" style="flex: 1")
+    h2.text-error Unable to Join Meeting
+    p.text-medium-emphasis.mt-2(style="max-width: 400px") {{ error }}
+    v-btn.mt-4(color="primary" @click="goHome") Return Home
 
-    <!-- Meeting room -->
-    <template v-else>
-      <div class="meeting-content" :class="{ 'chat-open': store.isChatOpen }">
-        <VideoGrid />
-      </div>
-
-      <Controls
-        @toggle-audio="toggleAudio"
-        @toggle-video="toggleVideo"
-        @toggle-screen-share="toggleScreenShare"
-        @leave="leaveMeeting"
-      />
-
-      <Chat @send="sendChatMessage" />
-    </template>
-  </div>
+  //- Meeting room
+  template(v-else)
+    .meeting-content
+      VideoGrid
+    Controls(
+      @toggle-audio="toggleAudio"
+      @toggle-video="toggleVideo"
+      @toggle-screen-share="toggleScreenShare"
+      @leave="leaveMeeting"
+    )
+    Chat(@send="sendChatMessage")
 </template>
 
 <script setup>
@@ -76,8 +69,11 @@ onMounted(async () => {
       store.setRoomInfo(props.roomId, userId, username)
     }
 
-    // Initialize media
-    await initializeMedia()
+    // Initialize media and fetch TURN credentials in parallel
+    await Promise.all([
+      initializeMedia(),
+      webrtc.fetchIceServers()
+    ])
     originalStream = store.localStream
 
     // Connect to signaling server
@@ -161,81 +157,10 @@ function goHome() {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #1a1a2e;
 }
 
 .meeting-content {
   flex: 1;
   overflow: hidden;
-  transition: margin-right 0.3s ease;
-}
-
-.meeting-content.chat-open {
-  margin-right: 350px;
-}
-
-.loading {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-}
-
-.spinner {
-  width: 48px;
-  height: 48px;
-  border: 3px solid #333;
-  border-top-color: #4f46e5;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.error-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 20px;
-  text-align: center;
-}
-
-.error-container h2 {
-  color: #ef4444;
-}
-
-.error-container p {
-  color: #888;
-  max-width: 400px;
-}
-
-.btn {
-  padding: 12px 24px;
-  background: #4f46e5;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn:hover {
-  background: #4338ca;
-}
-
-@media (max-width: 640px) {
-  .meeting-content.chat-open {
-    margin-right: 0;
-  }
 }
 </style>

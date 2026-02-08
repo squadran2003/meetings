@@ -1,49 +1,51 @@
-<template>
-  <div class="chat" :class="{ open: store.isChatOpen }">
-    <div class="chat-header">
-      <h3>Chat</h3>
-      <button @click="store.toggleChat" class="btn-close">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
+<template lang="pug">
+v-navigation-drawer(
+  :model-value="store.isChatOpen"
+  location="right"
+  :width="350"
+  temporary
+  @update:model-value="v => { if (!v) store.toggleChat() }"
+)
+  .d-flex.flex-column(style="height: 100%")
+    v-toolbar(color="surface" density="compact")
+      v-toolbar-title Chat
+      v-spacer
+      v-btn(icon variant="text" @click="store.toggleChat")
+        v-icon mdi-close
 
-    <div class="messages" ref="messagesEl">
-      <div
+    .messages(ref="messagesEl")
+      .message(
         v-for="(msg, index) in store.chatMessages"
         :key="index"
-        class="message"
         :class="{ 'is-own': msg.fromUserId === store.userId }"
-      >
-        <div class="message-header">
-          <span class="message-author">{{ msg.fromUserId === store.userId ? 'You' : msg.username }}</span>
-          <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
-        </div>
-        <div class="message-content">{{ msg.message }}</div>
-      </div>
+      )
+        .message-header
+          span.message-author {{ msg.fromUserId === store.userId ? 'You' : msg.username }}
+          span.message-time {{ formatTime(msg.timestamp) }}
+        .message-content {{ msg.message }}
 
-      <div v-if="store.chatMessages.length === 0" class="no-messages">
-        No messages yet. Start the conversation!
-      </div>
-    </div>
+      .text-center.text-medium-emphasis.pa-10(v-if="store.chatMessages.length === 0")
+        | No messages yet. Start the conversation!
 
-    <form @submit.prevent="sendMessage" class="chat-input">
-      <input
+    v-divider
+    form.d-flex.ga-2.pa-4(@submit.prevent="sendMessage")
+      v-text-field(
         v-model="newMessage"
-        type="text"
         placeholder="Type a message..."
+        variant="outlined"
+        density="compact"
         maxlength="500"
-      />
-      <button type="submit" :disabled="!newMessage.trim()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="22" y1="2" x2="11" y2="13"></line>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-        </svg>
-      </button>
-    </form>
-  </div>
+        hide-details
+        rounded="pill"
+      )
+      v-btn(
+        icon
+        color="primary"
+        type="submit"
+        :disabled="!newMessage.trim()"
+        size="40"
+      )
+        v-icon mdi-send
 </template>
 
 <script setup>
@@ -87,54 +89,6 @@ watch(() => store.chatMessages.length, async () => {
 </script>
 
 <style scoped>
-.chat {
-  position: fixed;
-  top: 0;
-  right: -350px;
-  width: 350px;
-  height: 100%;
-  background: #16213e;
-  border-left: 1px solid #333;
-  display: flex;
-  flex-direction: column;
-  transition: right 0.3s ease;
-  z-index: 100;
-}
-
-.chat.open {
-  right: 0;
-}
-
-.chat-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px;
-  border-bottom: 1px solid #333;
-}
-
-.chat-header h3 {
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.btn-close {
-  background: transparent;
-  border: none;
-  color: #888;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-close:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.1);
-}
-
 .messages {
   flex: 1;
   overflow-y: auto;
@@ -142,12 +96,6 @@ watch(() => store.chatMessages.length, async () => {
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-.no-messages {
-  color: #666;
-  text-align: center;
-  padding: 40px 20px;
 }
 
 .message {
@@ -168,7 +116,7 @@ watch(() => store.chatMessages.length, async () => {
 .message-author {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #4f46e5;
+  color: rgb(var(--v-theme-primary));
 }
 
 .message.is-own .message-author {
@@ -177,11 +125,11 @@ watch(() => store.chatMessages.length, async () => {
 
 .message-time {
   font-size: 0.625rem;
-  color: #666;
+  color: rgba(var(--v-theme-on-surface), 0.5);
 }
 
 .message-content {
-  background: #0f0f23;
+  background: rgb(var(--v-theme-background));
   padding: 8px 12px;
   border-radius: 12px;
   font-size: 0.875rem;
@@ -190,58 +138,6 @@ watch(() => store.chatMessages.length, async () => {
 }
 
 .message.is-own .message-content {
-  background: #4f46e5;
-}
-
-.chat-input {
-  display: flex;
-  gap: 8px;
-  padding: 16px;
-  border-top: 1px solid #333;
-}
-
-.chat-input input {
-  flex: 1;
-  padding: 10px 14px;
-  border: 1px solid #333;
-  border-radius: 20px;
-  background: #0f0f23;
-  color: #fff;
-  font-size: 0.875rem;
-  outline: none;
-}
-
-.chat-input input:focus {
-  border-color: #4f46e5;
-}
-
-.chat-input button {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: none;
-  background: #4f46e5;
-  color: #fff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.chat-input button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.chat-input button:hover:not(:disabled) {
-  background: #4338ca;
-}
-
-@media (max-width: 640px) {
-  .chat {
-    width: 100%;
-    right: -100%;
-  }
+  background: rgb(var(--v-theme-primary));
 }
 </style>

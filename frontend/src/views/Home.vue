@@ -1,66 +1,100 @@
-<template>
-  <div class="home">
-    <div class="container">
-      <h1>Meetings</h1>
-      <p class="subtitle">Video calls with up to 4 participants</p>
+<template lang="pug">
+v-container.fill-height(style="position: relative")
+  v-btn.theme-toggle(
+    icon
+    variant="text"
+    @click="toggleTheme"
+    :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+    style="position: absolute; top: 16px; right: 16px; z-index: 1"
+  )
+    v-icon {{ isDark ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}
+  v-row.justify-center.align-center
+    v-col(cols="12" md="10" lg="8")
+      .text-center.mb-10
+        h1.text-h3.font-weight-bold Meetings
+        p.text-subtitle-1.text-medium-emphasis Video calls with up to 4 participants
 
-      <div class="actions">
-        <div class="card">
-          <h2>Start New Meeting</h2>
-          <input
-            v-model="username"
-            type="text"
-            placeholder="Your name"
-            class="input"
-            maxlength="50"
-            @input="validateUsername"
-          />
-          <button @click="createMeeting" :disabled="!isValidUsername" class="btn btn-primary">
-            Create Meeting
-          </button>
-        </div>
+      v-row(align="center" justify="center")
+        v-col(cols="12" sm="6" md="5")
+          v-card.pa-6(color="surface" rounded="lg")
+            v-card-title.text-h6 Start New Meeting
+            v-card-text
+              v-text-field(
+                v-model="username"
+                label="Your name"
+                variant="outlined"
+                density="comfortable"
+                maxlength="50"
+                @input="validateUsername"
+                hide-details
+              )
+            v-card-actions
+              v-btn(
+                block
+                color="primary"
+                size="large"
+                :disabled="!isValidUsername"
+                @click="createMeeting"
+              ) Create Meeting
 
-        <div class="divider">
-          <span>or</span>
-        </div>
+        v-col.text-center.d-none.d-md-flex.align-center.justify-center(cols="auto")
+          span.text-medium-emphasis or
 
-        <div class="card">
-          <h2>Join Existing Meeting</h2>
-          <input
-            v-model="username"
-            type="text"
-            placeholder="Your name"
-            class="input"
-            maxlength="50"
-            @input="validateUsername"
-          />
-          <input
-            v-model="roomCode"
-            type="text"
-            placeholder="Meeting code"
-            class="input"
-            maxlength="50"
-            @keyup.enter="joinMeeting"
-          />
-          <button @click="joinMeeting" :disabled="!isValidUsername || !roomCode.trim()" class="btn btn-secondary">
-            Join Meeting
-          </button>
-        </div>
-      </div>
+        v-col(cols="12" sm="6" md="5")
+          v-card.pa-6(color="surface" rounded="lg")
+            v-card-title.text-h6 Join Existing Meeting
+            v-card-text
+              v-text-field.mb-3(
+                v-model="username"
+                label="Your name"
+                variant="outlined"
+                density="comfortable"
+                maxlength="50"
+                @input="validateUsername"
+                hide-details
+              )
+              v-text-field(
+                v-model="roomCode"
+                label="Meeting code"
+                variant="outlined"
+                density="comfortable"
+                maxlength="50"
+                @keyup.enter="joinMeeting"
+                hide-details
+              )
+            v-card-actions
+              v-btn(
+                block
+                variant="tonal"
+                size="large"
+                :disabled="!isValidUsername || !roomCode.trim()"
+                @click="joinMeeting"
+              ) Join Meeting
 
-      <p v-if="error" class="error">{{ error }}</p>
-    </div>
-  </div>
+      v-alert.mt-4(
+        v-if="error"
+        type="error"
+        variant="tonal"
+        closable
+      ) {{ error }}
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useTheme } from 'vuetify'
 import { useMeetingStore } from '../stores/meeting'
 import { API_URL } from '../config'
 
 const router = useRouter()
 const store = useMeetingStore()
+const theme = useTheme()
+
+const isDark = computed(() => theme.global.current.value.dark)
+
+function toggleTheme() {
+  theme.global.name.value = isDark.value ? 'light' : 'dark'
+}
 
 const username = ref('')
 const roomCode = ref('')
@@ -157,120 +191,3 @@ function generateUserId() {
   return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
 }
 </script>
-
-<style scoped>
-.home {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.container {
-  max-width: 800px;
-  width: 100%;
-  text-align: center;
-}
-
-h1 {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
-  color: #fff;
-}
-
-.subtitle {
-  color: #888;
-  margin-bottom: 3rem;
-}
-
-.actions {
-  display: flex;
-  gap: 2rem;
-  align-items: stretch;
-}
-
-.card {
-  flex: 1;
-  background: #16213e;
-  padding: 2rem;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.card h2 {
-  font-size: 1.25rem;
-  margin-bottom: 0.5rem;
-}
-
-.divider {
-  display: flex;
-  align-items: center;
-  color: #666;
-}
-
-.input {
-  padding: 12px 16px;
-  border: 1px solid #333;
-  border-radius: 8px;
-  background: #0f0f23;
-  color: #fff;
-  font-size: 1rem;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.input:focus {
-  border-color: #4f46e5;
-}
-
-.btn {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background: #4f46e5;
-  color: #fff;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #4338ca;
-}
-
-.btn-secondary {
-  background: #374151;
-  color: #fff;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: #4b5563;
-}
-
-.error {
-  color: #ef4444;
-  margin-top: 1rem;
-}
-
-@media (max-width: 640px) {
-  .actions {
-    flex-direction: column;
-  }
-
-  .divider {
-    padding: 1rem 0;
-  }
-}
-</style>

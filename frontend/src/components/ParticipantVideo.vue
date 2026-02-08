@@ -1,22 +1,15 @@
-<template>
-  <div class="participant-video" :class="{ 'is-local': isLocal }">
-    <video
-      ref="videoEl"
-      :muted="isLocal"
-      autoplay
-      playsinline
-    ></video>
-    <div class="overlay">
-      <span class="name">{{ name }}{{ isLocal ? ' (You)' : '' }}</span>
-    </div>
-    <div v-if="!hasVideo" class="no-video">
-      <div class="avatar">{{ initials }}</div>
-    </div>
-  </div>
+<template lang="pug">
+.participant-video(:class="{ 'is-local': isLocal }")
+  video(ref="videoEl" :muted="isLocal" autoplay playsinline)
+  .overlay
+    span.name {{ name }}{{ isLocal ? ' (You)' : '' }}
+  .no-video.d-flex.align-center.justify-center(v-if="!hasVideo")
+    v-avatar(color="primary" size="80")
+      span.text-h5.font-weight-bold {{ initials }}
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, toRaw } from 'vue'
 
 const props = defineProps({
   stream: {
@@ -52,7 +45,10 @@ const initials = computed(() => {
 
 function attachStream() {
   if (videoEl.value && props.stream) {
-    videoEl.value.srcObject = props.stream
+    // toRaw() strips any Vue Proxy wrapper so the browser gets the native MediaStream
+    videoEl.value.srcObject = toRaw(props.stream)
+    // Explicit play() required on mobile browsers even with autoplay attribute
+    videoEl.value.play().catch(() => {})
   }
 }
 
@@ -68,7 +64,7 @@ onMounted(() => {
 <style scoped>
 .participant-video {
   position: relative;
-  background: #0f0f23;
+  background: rgb(var(--v-theme-background));
   border-radius: 12px;
   overflow: hidden;
   aspect-ratio: 16 / 9;
@@ -104,22 +100,6 @@ video {
   left: 0;
   right: 0;
   bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #1a1a2e;
-}
-
-.avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: #4f46e5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #fff;
+  background: rgb(var(--v-theme-background));
 }
 </style>
