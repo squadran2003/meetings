@@ -30,7 +30,7 @@ A Zoom-like video conferencing application supporting 2-4 participants with vide
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # On Windows: venv\Scripts\activatedghdhgds
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
