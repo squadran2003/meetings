@@ -1,6 +1,9 @@
 # Stage 1: Build the Vue app
 FROM node:20-alpine AS build
 
+ARG VITE_API_URL
+ARG VITE_WS_URL
+
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
