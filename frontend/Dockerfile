@@ -18,3 +18,5 @@ COPY nginx.conf.template /etc/nginx/nginx.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 
 CMD sh -c "export LISTEN_PORT=\${PORT:-80} && envsubst '\${LISTEN_PORT}' < /etc/nginx/nginx.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+
+expose 80
