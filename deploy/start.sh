@@ -10,22 +10,8 @@ APP_DIR="/opt/meetings"
 if [ "$1" = "--deploy" ]; then
   echo "=== Deploying Video Conferencing App ==="
 
-  # Build frontend
-  echo "Installing frontend dependencies..."
-  cd "$APP_DIR/frontend"
-  npm install
-
-  echo "Building frontend..."
-  npm run build
-
-  # Remove stale static files and copy fresh build
-  echo "Updating backend static files..."
-  rm -rf "$APP_DIR/backend/static"
-  cp -r "$APP_DIR/frontend/dist" "$APP_DIR/backend/static"
-
-  # Start backend
-  echo "Starting backend..."
   cd "$APP_DIR"
+  docker compose -f docker-compose.prod.yml build
   docker compose -f docker-compose.prod.yml up -d
 
   echo "=== Deploy Complete ==="
@@ -55,11 +41,6 @@ sudo apt install -y nginx
 echo "Installing certbot..."
 sudo apt install -y certbot python3-certbot-nginx
 
-# Install Node.js for building frontend
-echo "Installing Node.js..."
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
-
 # Create app directory
 echo "Setting up application directory..."
 sudo mkdir -p /opt/meetings
@@ -83,7 +64,7 @@ server {
     server_name yourdomain.com;
 
     location / {
-        proxy_pass http://localhost:8000;
+        proxy_pass http://localhost:8080;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";

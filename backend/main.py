@@ -2,7 +2,6 @@
 
 import logging
 import os
-from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, Request, HTTPException
@@ -10,7 +9,7 @@ from fastapi import FastAPI, WebSocket, Request, HTTPException
 # Load environment variables from .env file
 load_dotenv()
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -213,42 +212,6 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, user_id: str):
         return
 
     await handle_websocket(websocket, room_id, user_id)
-
-
-# Serve static files in production (only if frontend is built and included)
-static_dir = os.path.join(os.path.dirname(__file__), "static")
-index_file = os.path.join(static_dir, "index.html")
-
-if os.path.exists(static_dir) and os.path.exists(index_file):
-    from fastapi.staticfiles import StaticFiles
-
-    assets_dir = os.path.join(static_dir, "assets")
-    if os.path.exists(assets_dir):
-        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
-
-    @app.get("/{full_path:path}")
-    async def serve_frontend(full_path: str):
-        """Serve frontend for all non-API routes with path traversal protection."""
-        static_path = Path(static_dir).resolve()
-
-        # Handle empty path
-        if not full_path:
-            return FileResponse(str(static_path / "index.html"))
-
-        # Resolve requested path
-        try:
-            requested_path = (static_path / full_path).resolve()
-            # Ensure path is within static directory (prevent path traversal)
-            requested_path.relative_to(static_path)
-        except (ValueError, RuntimeError):
-            # Path traversal attempt or invalid path
-            raise HTTPException(status_code=403, detail="Access denied")
-
-        if requested_path.is_file():
-            return FileResponse(str(requested_path))
-
-        # Return index.html for SPA routing
-        return FileResponse(str(static_path / "index.html"))
 
 
 if __name__ == "__main__":
