@@ -20,6 +20,4 @@ RUN chmod +x /docker-entrypoint.d/40-envsubst-backend.sh
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
-EXPOSE 8080
-
 CMD ["nginx", "-g", "daemon off;"]
