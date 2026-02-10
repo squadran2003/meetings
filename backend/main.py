@@ -1,7 +1,11 @@
 """FastAPI application for video conferencing signaling server."""
 
+import base64
+import hashlib
+import hmac
 import logging
 import os
+import time
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, Request, HTTPException
@@ -105,9 +109,20 @@ async def health_check():
     return {"status": "healthy"}
 
 
+# Self-hosted coturn configuration
+TURN_SECRET = os.getenv("TURN_SECRET", "")
+TURN_HOST = os.getenv("TURN_HOST", "")
+
 # TURN credential cache (fetched from Metered.ca API)
 _turn_cache: dict = {"iceServers": None, "expires": 0}
 METERED_API_KEY = os.getenv("METERED_API_KEY", "")
+
+STUN_ONLY = {
+    "iceServers": [
+        {"urls": "stun:stun.l.google.com:19302"},
+        {"urls": "stun:stun1.l.google.com:19302"},
+    ]
+}
 
 
 @app.get("/api/turn-credentials")
@@ -115,21 +130,37 @@ METERED_API_KEY = os.getenv("METERED_API_KEY", "")
 async def get_turn_credentials(request: Request):  # noqa: ARG001
     """Return ICE servers including TURN credentials.
 
-    Fetches from Metered.ca API and caches for 12 hours.
-    If no API key is configured, returns STUN-only servers.
+    Supports self-hosted coturn (TURN_SECRET + TURN_HOST) or Metered.ca
+    (METERED_API_KEY). Falls back to STUN-only if neither is configured.
     """
     _ = request
-    import time
 
-    stun_only = {
-        "iceServers": [
-            {"urls": "stun:stun.l.google.com:19302"},
-            {"urls": "stun:stun1.l.google.com:19302"},
-        ]
-    }
+    # Option 1: Self-hosted coturn with shared secret
+    if TURN_SECRET and TURN_HOST:
+        expiry = int(time.time()) + 86400  # 24 hours
+        username = f"{expiry}:meetings"
+        password = base64.b64encode(
+            hmac.new(TURN_SECRET.encode(), username.encode(), hashlib.sha1).digest()
+        ).decode()
 
+        return {
+            "iceServers": [
+                {"urls": "stun:stun.l.google.com:19302"},
+                {
+                    "urls": [
+                        f"turn:{TURN_HOST}:3478?transport=udp",
+                        f"turn:{TURN_HOST}:3478?transport=tcp",
+                        f"turns:{TURN_HOST}:5349?transport=tcp",
+                    ],
+                    "username": username,
+                    "credential": password,
+                },
+            ]
+        }
+
+    # Option 2: Metered.ca managed TURN
     if not METERED_API_KEY:
-        return stun_only
+        return STUN_ONLY
 
     now = time.time()
     if _turn_cache["iceServers"] and now < _turn_cache["expires"]:
@@ -151,7 +182,7 @@ async def get_turn_credentials(request: Request):  # noqa: ARG001
         logger.warning(f"Failed to fetch TURN credentials: {e}")
         if _turn_cache["iceServers"]:
             return {"iceServers": _turn_cache["iceServers"]}
-        return stun_only
+        return STUN_ONLY
 
 
 @app.post("/api/rooms")
